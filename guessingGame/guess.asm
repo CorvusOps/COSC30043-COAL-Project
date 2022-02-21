@@ -171,17 +171,88 @@ __itoa_loop:
     cmp eax, ecx
 	jl __itoa_loopend
 
-	imul ecx, 10 ; Then go to 100, 1000 so on...
-	add ebx, 1 ; Then go to 2, 3 and so on...
+	imul ecx, 10 ; loop then go to 100, 1000 so on...
+	add ebx, 1 ; if 1 digit then go to 2, 3 and so on...
 	jmp __itoa_loop
 
 __itoa_knowndigits: ; Accept eax (i), ebx (d), ecx (m), return eax (a), ebx (l)
     
     call __itoa_init
 
-__itoa_loopend:     ;matt
+__itoa_loopend:     
+
+    ; Prepare for loop
+	; edx now contains m
+	; ecx is now ready to count.
+	; eax already contains i
+	; ebx already contains d.
+
+	mov edx, ecx
+	mov ecx, ebx
+	
+	push ebx
+
 __itoa_loop2:
     
+    push eax
+
+	; Divide m by 10 into m
+
+	mov eax, edx
+	mov edx, 0 ; Exponent is 0
+	mov ebx, 10 ; Divide by 10
+
+	idiv ebx
+	mov ebx, eax ; New m
+	
+	; Divide number by new m into (1)
+
+	mov eax, [esp] ; Number
+	mov edx, 0 ; Exponent is 0
+	idiv ebx ; (1)
+
+	; Store into buffer
+
+	mov edx, [esp+4] ; Each dword has 4 bytes
+	sub edx, ecx
+	
+	add eax, 48 ; Offsets (1) as ASCII number
+	
+	mov [_itoabuf+edx], eax
+
+	sub eax, 48 ; Un-offsets (1) to prepare for next step
+
+	; Multiply (1) by m into (1)
+
+	imul eax, ebx
+
+	; Subtract number by (1) into number
+	
+	mov edx, ebx ; Restore new-m back to edx as m
+	
+	pop ebx ; Number
+	sub ebx, eax ; New number
+	mov eax, ebx	
+
+	loop __itoa_loop2
+
+	; Return buffer array address and
+	; Pop the preserved ebx as length
+
+	mov eax, _itoabuf
+	pop ebx
+
+	; Pop preserved registers and restore
+
+	pop edx
+	pop ecx	
+
+	ret
+
+__exit:
+	
+	mov eax, 1 ; Exit syscall
+	ret
     
 __syscall:
 
@@ -197,7 +268,8 @@ __write:
 	
 	mov eax, 4      ; syscall for writing
 	ret
-
+    
+;Matt's part (delete this line btw XD)
 ; Declarations of Data 
 section .data
 
