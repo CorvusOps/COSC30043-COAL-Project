@@ -15,141 +15,271 @@
 ;=======================================================;
 
 ; 
+
+; Guessing game source code
+; Beta 1.0
+;
+; Lim Ding Wen
+; Singapore, 659442
+
 section .text
 
-        global _start 
-
+	global _start
 
 _start:
 
+	; Get random number
 
+	call __open
+	mov ebx, _dev_random
+	mov ecx, 0 ; RDONLY
+	call __syscall
 
-;30
+	mov ebx, eax
+	push eax
+	call __read
+	mov ecx, randint
+	mov edx, 4 ; 4 bytes of random; 32-bit
+	call __syscall
+	
+	call __close
+	pop ebx
+	call __syscall
+
+	mov eax, [randint]
+	jmp _modend
+
 _modup:
+
+	add eax, maxrand
+	jmp _modend
+
 _moddown:
+
+	sub eax, maxrand
+
 _modend:
 
-;100 2 ppl Jan & Joseph
+	cmp eax, maxrand
+	jg _moddown
+	cmp eax, 1 ; Is it lower than 1?
+	jl _modup
+
+	mov [randint], eax
+
+	;call __write
+	;mov ebx, 1
+	;mov ecx, randint
+	;mov edx, 4
+	;call __syscall
+
+	; Write hello message
+	
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, hello
+	mov edx, hello_len
+	call __syscall
+
 _loop:
-        ; Writing the prompt
 
-    mov eax, [tries]          ; copy eax to memory address of tries
-    mov ebx, 1                ; Optimization warning: May change. Do not use if tries > 9. Use standard __itoa instead.
-    mov ecx, 10               ; Optimized
-    call __itoa_knowndigits   ; call function __itoa_knowndigits
-    
-    mov ecx, eax              ; copy eax to ecx
-    mov edx, ebx              ; copy ebx to edx
-    
-    call __write              ; call function __write
-    mov ebx, 1                ; file descriptor (stdout)
-    call __syscall            ; call function __syscall
-    
-    call __write              ; call function __write
-    mov ebx, 1                ; file descriptor (stdout)
-    mov ecx, promptMsg        ; message to write/prompt
-    mov edx, promptMsg_len    ; length of the prompt message
-    call __syscall            ; call function __syscall
-    
-    ; Read input
+	; Write prompt
 
-    call __read
-    mov ebx, 0                ; file descriptor (stdin)
-    mov ecx, inputNum         ; set inputNum to ecx
-    mov edx, inputNum_len     ; copies length of inputNum_len to edx
-    call __syscall            ; call __syscall function
+	mov eax, [tries]
+	mov ebx, 1 ; Optimization warning: May change. Do not use if tries > 9. Use standard __itoa instead.
+	mov ecx, 10 ; Optimized
+	call __itoa_knowndigits
+	
+	mov ecx, eax
+	mov edx, ebx
+	
+	call __write
+	mov ebx, 1 ; Stdout
+	call __syscall
+	
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, prompt
+	mov edx, prompt_len
+	call __syscall
+	
+	; Read input
 
-    ; Conversion to integer
+	call __read
+	mov ebx, 0 ; Stdin
+	mov ecx, inputbuf
+	mov edx, inputbuf_len
+	call __syscall
 
-    mov ecx, eax              ; copy eax to ecx
-    sub ecx, 1                ; Get rid of extra newline
-    
-    cmp ecx, 1                ; compares if the length of the number less than 1? (invalid) 
-    jl _reenter               ; if the above condition is met, it'll jump to _reenter
+	; Convert into integer
 
-    mov ebx, ecx              ; copy ecx to ebx
+	mov ecx, eax
+	sub ecx, 1 ; Get rid of extra newline
+	
+	cmp ecx, 1 ; Is the length of the number less than 1? (invalid)
+	jl _reenter
 
-    mov eax, 0                ; Initalize eax
-    jmp _loopconvert_nomul
+	mov ebx, ecx
 
-_loopconvert_nomul:	
+	mov eax, 0 ; Initalize eax
+	jmp _loopconvert_nomul
+
+_loopconvert:
+
+	imul eax, 10 ; Multiply by 10
+	
+_loopconvert_nomul:
+
+	mov edx, ebx
+	sub edx, ecx
+	
+	push eax
+	
+	mov ah, [inputbuf+edx]
+	
+	sub ah, 48 ; ASCII digits offset
+	
+	cmp ah, 0 ; Less than 0?
+	jl _reenter
+	cmp ah, 9 ; More than 9?
+	jg _reenter
+
+	movzx edx, ah
+	
+	pop eax
+	add eax, edx
+
+	loop _loopconvert
+	
+	jmp _convertok
 
 _reenter:
-        ; Displaying the message
 
-    call __write               ; call __write function
-    mov ebx, 1                 ; file descriptor (stdout)
-    mov ecx, reenterMsg        ; display/write the message 
-    mov edx, reenterMsg_len    ; set length of the message 
-    call __syscall             ; call __syscall function
+	; Write message
 
-        ; Repeat enter
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, reenter
+	mov edx, reenter_len
+	call __syscall
 
-    jmp _loop
+	; Repeat enter
 
-;100 2ppl Josa & Ichu
+	jmp _loop
+	
 _toohigh:
 
-    call __write
-    mov ebx, 1 ; Stdout
-    mov ecx, toohigh   ; copies the contents of toohigh onto the ecx
-    mov edx, toohigh_len  ; copies the length of toohigh onto the edx
-    call __syscall  
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, toohigh
+	mov edx, toohigh_len
+	call __syscall
 
-    jmp _again ;gives the execution control to _again
+	jmp _again
 
 _toolow:
-    
-    call __write ;
-    mov ebx, 1 ; Stdout
-    mov ecx, toolow  ; copies contents of toolow to the ecx
-    mov edx, toolow_len ; copies the length of toolow to the edx
-    call __syscall 
+	
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, toolow
+	mov edx, toolow_len
+	call __syscall
 
 _again:
 
-    cmp dword [tries], 1  ; compares the number of tries remaining if it is equal to 1
-    jle _lose ;jumps to _lose if the compared variables are equal 
+	cmp dword [tries], 1 ; Is this the last try?
+	jle _lose
 
-    sub dword [tries], 1;subtracts 1 from the total value of tries
-    
-    jmp _loop ; gives the execution control to _loop
+	sub dword [tries], 1 ; Minus one try.
+	
+	jmp _loop
+
 _lose:
-  
+
+	; You lose
 
 	call __write
 	mov ebx, 1 ; Stdout
-	mov ecx, youlose ;copies the contents of youlose into the ecx
-	mov edx, youlose_len ;copies the length from youlose_len into the edx
+	mov ecx, youlose
+	mov edx, youlose_len
 	call __syscall
 
-	mov eax, [randint] ; stores the return value of randint into the eax
+	mov eax, [randint]
 	call __itoa
 
-	mov ecx, eax  ;stores the content of eax to ecx
-	mov edx, ebx  ;stores the content of edx to ebx
+	mov ecx, eax
+	mov edx, ebx
 	call __write
 	mov ebx, 1 ; Stdout
 	call __syscall
 
 	call __write
 	mov ebx, 1 ; Stdout
-	mov ecx, youlose2  ;copies the content of youlose2 into the ecx
-	mov edx, youlose2_len ;copies the length from youlose2_len into the edx 
+	mov ecx, youlose2
+	mov edx, youlose2_len
 	call __syscall
 
-	mov ebx, 2 ; Exit code 
+	mov ebx, 2 ; Exit code for OK, lose.
 
 	jmp _exit
 
 _convertok:
-_exit:
-	
 
-;108 2ppl JP & Matt
+	; Compare input
+
+	cmp eax, [randint]
+	jg _toohigh
+	jl _toolow
+
+	; You win
+
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, youwin
+	mov edx, youwin_len
+	call __syscall
+
+	mov ebx, 1 ; Exit code for OK, win.
+
+_exit:
+
+	push ebx
+
+	; Print normal goodbye
+
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, goodbye
+	mov edx, goodbye_len
+	call __syscall
+	mov ebx, 2 ; Stderr
+	call __syscall
+
+	; Report OK.
+
+	call __write
+	mov ebx, 1 ; Stdout
+	mov ecx, _ok
+	mov edx, _ok_len
+	call __syscall
+	mov ebx, 2 ; Stderr
+	call __syscall
+
+	; Exit
+
+	call __exit
+	pop ebx
+	call __syscall
+	
+; Procedures
+
 __itoa_init:
 
-    
+	; push eax
+	; push ebx
+	; We do not have to preserve as it will contain
+	; A return value
+
 	pop dword [_itoabuf]
 
 	push ecx
@@ -161,31 +291,31 @@ __itoa_init:
 
 __itoa: ; Accept eax (i), return eax (a), ebx (l)
 
-    call __itoa_init
+	call __itoa_init
 
 	mov ecx, 10 ; Start with 10 (first 2-digit)
 	mov ebx, 1 ; If less than 10, it has 1 digit.
-    
+
 __itoa_loop:
 
-    cmp eax, ecx
+	cmp eax, ecx
 	jl __itoa_loopend
 
-	imul ecx, 10 ; loop then go to 100, 1000 so on...
-	add ebx, 1 ; if 1 digit then go to 2, 3 and so on...
+	imul ecx, 10 ; Then go to 100, 1000...
+	add ebx, 1 ; Then go to 2, 3...
 	jmp __itoa_loop
 
 __itoa_knowndigits: ; Accept eax (i), ebx (d), ecx (m), return eax (a), ebx (l)
-    
-    call __itoa_init
 
-__itoa_loopend:     
+	call __itoa_init
 
-    ; Prepare for loop
+__itoa_loopend:
+
+	; Prepare for loop
 	; edx now contains m
 	; ecx is now ready to count.
-	; eax already contains i
-	; ebx already contains d.
+	; eax already has i
+	; ebx already has d.
 
 	mov edx, ecx
 	mov ecx, ebx
@@ -193,8 +323,8 @@ __itoa_loopend:
 	push ebx
 
 __itoa_loop2:
-    
-    push eax
+
+	push eax
 
 	; Divide m by 10 into m
 
@@ -216,11 +346,11 @@ __itoa_loop2:
 	mov edx, [esp+4] ; Each dword has 4 bytes
 	sub edx, ecx
 	
-	add eax, 48 ; Offsets (1) as ASCII number
+	add eax, 48 ; Offset (1) as ASCII number
 	
 	mov [_itoabuf+edx], eax
 
-	sub eax, 48 ; Un-offsets (1) to prepare for next step
+	sub eax, 48 ; Un-offset (1) to prepare for next step
 
 	; Multiply (1) by m into (1)
 
@@ -237,7 +367,7 @@ __itoa_loop2:
 	loop __itoa_loop2
 
 	; Return buffer array address and
-	; Pop the preserved ebx as length
+	; Pop preserved ebx as length
 
 	mov eax, _itoabuf
 	pop ebx
@@ -253,60 +383,77 @@ __exit:
 	
 	mov eax, 1 ; Exit syscall
 	ret
-    
-__syscall:
-
-	int 0x80        ; Interupt kernel
-	ret
 
 __read:
 
-	mov eax, 3      ; syscall for reading
+	mov eax, 3 ; Read syscall
 	ret
 
 __write:
 	
-	mov eax, 4      ; syscall for writing
+	mov eax, 4 ; Write syscall
 	ret
-    
-; Declarations of Data 
+
+__open:
+
+	mov eax, 5 ; Open syscall
+	ret
+
+__close:
+
+	mov eax, 6 ; Close syscall
+	ret
+
+__syscall:
+
+	int 0x80 ; Interupt kernel
+	ret
+
+; Data declaration
+
 section .data
 
-    maxrand equ 100
+	_dev_random db "/dev/random", 0x0
+	
+	maxrand equ 100
 	tries dd 6
 
-	promptMsg db " tries left. Input number between 1-100: "    
-	promptMsg_len equ $-promptMsg
+	prompt db " tries left. Input number (1-100): "
+	prompt_len equ $-prompt
 
-	hello db 0xa, "Guessing Game!", 0za, "Guess a number between 1-100!", 0xa, 0xa
+	hello db 0xa, "Welcome to the guessing game!", 0xa, "I am now thinking of a number. What is it?", 0xa, "Take a guess, from one to one hundred.", 0xa, 0xa
 	hello_len equ $-hello
 
-    reenterMsg db "? REENTER", 0xa, "Invalid unsigned integer. Please re-enter your input.", 0xa    
-	reenterMsg_len equ $-reenterMsg
+	reenter db "? REENTER", 0xa, "Invalid unsigned integer. Please re-enter your input.", 0xa
+	reenter_len equ $-reenter
 
-	toohigh db "The number you have guessed is too high!", 0xa, 0xa
+	toohigh db "That was too high!", 0xa, 0xa
 	toohigh_len equ $-toohigh
 
-	toolow db "The number you have guessed is too low!", 0xa, 0xa
+	toolow db "That was too low!", 0xa, 0xa
 	toolow_len equ $-toolow
 
-	youwin db 0x7, 0xa, "You have guessed the correct number!", 0xa, 0xa
+	youwin db 0x7, 0xa, "#^$&^@%#^@#! That was correct! You win!", 0xa, 0xa
 	youwin_len equ $-youwin
 
-	youlose db "You have ran out of tries! You lose!, 0xa, "The correct number was "
+	youlose db "You have no more tries left! You lose!", 0xa, "The answer was "
 	youlose_len equ $-youlose
 
-	youlose2 db "!", 0xa, 0xa
+	youlose2 db "! Mwahahah!", 0xa, 0xa
 	youlose2_len equ $-youlose2
 
-	goodbye db "Thank you for playing our Guessing Game!", 0xa
+	goodbye db "Goodbye.", 0xa
 	goodbye_len equ $-goodbye
 
-	_ok db "Successfully aborted, errors were not found.", 0xa, 0xa
+	_ok db "Exit OK. There were no errors.", 0xa, 0xa
 	_ok_len equ $-_ok
 
 section .bss
 
-        inputNum resb 1024
-	inputNum_len equ 1024
+	randint resw 2
+	downsize resw 2
+	
+	_itoabuf resb 1024
 
+	inputbuf resb 1024
+	inputbuf_len equ 1024
