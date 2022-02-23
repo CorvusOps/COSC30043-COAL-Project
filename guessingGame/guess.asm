@@ -269,18 +269,41 @@ __write:
 	mov eax, 4      ; syscall for writing
 	ret
     
-;Matt's part (delete this line btw XD)
 ; Declarations of Data 
 section .data
 
-        maxrand equ 100
+    maxrand equ 100
 	tries dd 6
 
 	promptMsg db " tries left. Input number between 1-100: "    
 	promptMsg_len equ $-promptMsg
 
-        reenterMsg db "? REENTER", 0xa, "Invalid unsigned integer. Please re-enter your input.", 0xa    
+	hello db 0xa, "Guessing Game!", 0za, "Guess a number between 1-100!", 0xa, 0xa
+	hello_len equ $-hello
+
+    reenterMsg db "? REENTER", 0xa, "Invalid unsigned integer. Please re-enter your input.", 0xa    
 	reenterMsg_len equ $-reenterMsg
+
+	toohigh db "The number you have guessed is too high!", 0xa, 0xa
+	toohigh_len equ $-toohigh
+
+	toolow db "The number you have guessed is too low!", 0xa, 0xa
+	toolow_len equ $-toolow
+
+	youwin db 0x7, 0xa, "You have guessed the correct number!", 0xa, 0xa
+	youwin_len equ $-youwin
+
+	youlose db "You have ran out of tries! You lose!, 0xa, "The correct number was "
+	youlose_len equ $-youlose
+
+	youlose2 db "!", 0xa, 0xa
+	youlose2_len equ $-youlose2
+
+	goodbye db "Thank you for playing our Guessing Game!", 0xa
+	goodbye_len equ $-goodbye
+
+	_ok db "Successfully aborted, errors were not found.", 0xa, 0xa
+	_ok_len equ $-_ok
 
 section .bss
 
