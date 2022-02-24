@@ -13,6 +13,31 @@
 ;   nasm -f elf guess.asm                               ;
 ;   ld -m elf_i386 -s -o guess guess.o                  ;
 ;=======================================================;
+; Instruction Material:									;
+;-------------------------------------------------------;
+; Assembling and running the program					;
+;														;
+; > Open terminal. In our case, we have used Ubuntu. 	;
+; > Assemble the program.								;					
+; >>> In the terminal, enter nasm –f elf guess.asm		;					;
+; > Once an object file has been created, 				;
+;			link it with the executable file			;
+; >>> In the terminal, 									;
+;			enter ld -m elf_i386 -s -o guess guess.o	;
+; > Execute the program by typing ./guess				;
+;-------------------------------------------------------;
+; Playing the game 										;
+;														;
+; > You will be prompted to enter a number.				;
+; >>> N tries left. Input number between 1-100: 		;
+; > Once you have guessed the correct number, 			;
+;			the program will end.						;
+; > However, if not, you will be prompted to guess 		;
+;			again until the 6th try if you still 		;
+;			haven’t guessed correctly.					;
+;=======================================================;
+
+
 
 
 section .text
@@ -22,7 +47,7 @@ section .text
 
 _start:
     
-    ;unallocated
+    
     ; Get random number
 
 	call __open
@@ -34,7 +59,7 @@ _start:
 	push eax
 	call __read
 	mov ecx, randint
-	mov edx, 4 ; 4 bytes of random; 32-bit
+	mov edx, 4 					; 4 bytes of random; 32-bit
 	call __syscall
 	
 	call __close
@@ -45,6 +70,7 @@ _start:
 	jmp _modend
 
 ;30
+
 _modup:
 
 	add eax, maxrand
@@ -58,7 +84,7 @@ _modend:
 
 	cmp eax, maxrand
 	jg _moddown
-	cmp eax, 1 ; Is it lower than 1?
+	cmp eax, 1 				; Is it lower than 1?
 	jl _modup
 
 	mov [randint], eax
@@ -72,14 +98,15 @@ _modend:
 	; Write hello message
 	
 	call __write
-	mov ebx, 1 ; Stdout
+	mov ebx, 1 				; Stdout
 	mov ecx, hello
 	mov edx, hello_len
 	call __syscall
 
-;100 2 ppl Jan & Joseph
+;2 ppl Jan & Joseph
 _loop:
-        ; Writing the prompt
+    
+	; Writing the prompt
 
     mov eax, [tries]          ; copy eax to memory address of tries
     mov ebx, 1                ; Optimization warning: May change. Do not use if tries > 9. Use standard __itoa instead.
@@ -122,31 +149,31 @@ _loop:
 
 _loopconvert:
 
-	imul eax, 10 ; Multiply by 10
+	imul eax, 10 				; Multiply by 10
 
 _loopconvert_nomul:
-	mov edx, ebx
-	sub edx, ecx
+	mov edx, ebx				; copy ebx to edx
+	sub edx, ecx				; subtract ecx to edx
 	
 	push eax
 	
-	mov ah, [inputnum+edx]
+	mov ah, [inputnum+edx]		; copy the sumn of input and edx to ah
 	
-	sub ah, 48 ; ASCII digits offset
+	sub ah, 48 					; ASCII digits offset
 	
-	cmp ah, 0 ; Less than 0?
-	jl _reenter
-	cmp ah, 9 ; More than 9?
-	jg _reenter
+	cmp ah, 0 					; Less than 0?
+	jl _reenter					; prompt reenter 
+	cmp ah, 9 					; More than 9?
+	jg _reenter					; prompt reenter
 
-	movzx edx, ah
+	movzx edx, ah				
 	
 	pop eax
-	add eax, edx
+	add eax, edx				; add edx to eax
 
-	loop _loopconvert
+	loop _loopconvert			; return to get exacy number
 	
-	jmp _convertok
+	jmp _convertok				; prompt comparing input
 
 
 _reenter:
@@ -166,55 +193,55 @@ _reenter:
 _toohigh:
 
     call __write
-    mov ebx, 1 ; Stdout
-    mov ecx, toohigh   ; copies the contents of toohigh onto the ecx
-    mov edx, toohigh_len  ; copies the length of toohigh onto the edx
+    mov ebx, 1 				; Stdout
+    mov ecx, toohigh   		; copies the contents of toohigh onto the ecx
+    mov edx, toohigh_len  	; copies the length of toohigh onto the edx
     call __syscall  
 
-    jmp _again ;gives the execution control to _again
+    jmp _again 				;gives the execution control to _again
 
 _toolow:
     
-    call __write ;
-    mov ebx, 1 ; Stdout
-    mov ecx, toolow  ; copies contents of toolow to the ecx
-    mov edx, toolow_len ; copies the length of toolow to the edx
+    call __write 
+    mov ebx, 1 				; Stdout
+    mov ecx, toolow  		; copies contents of toolow to the ecx
+    mov edx, toolow_len 	; copies the length of toolow to the edx
     call __syscall 
 
 _again:
 
-    cmp dword [tries], 1  ; compares the number of tries remaining if it is equal to 1
-    jle _lose ;jumps to _lose if the compared variables are equal 
+    cmp dword [tries], 1  	; compares the number of tries remaining if it is equal to 1
+    jle _lose 				;jumps to _lose if the compared variables are equal 
 
-    sub dword [tries], 1;subtracts 1 from the total value of tries
+    sub dword [tries], 1	;subtracts 1 from the total value of tries
     
-    jmp _loop ; gives the execution control to _loop
+    jmp _loop 				; gives the execution control to _loop
 
 _lose:
   
 
 	call __write
-	mov ebx, 1 ; Stdout
-	mov ecx, youlose ;copies the contents of youlose into the ecx
-	mov edx, youlose_len ;copies the length from youlose_len into the edx
+	mov ebx, 1 				; Stdout
+	mov ecx, youlose 		;copies the contents of youlose into the ecx
+	mov edx, youlose_len 	;copies the length from youlose_len into the edx
 	call __syscall
 
-	mov eax, [randint] ; stores the return value of randint into the eax
+	mov eax, [randint] 		; stores the return value of randint into the eax
 	call __itoa
 
-	mov ecx, eax  ;stores the content of eax to ecx
-	mov edx, ebx  ;stores the content of edx to ebx
+	mov ecx, eax 			;stores the content of eax to ecx
+	mov edx, ebx  			;stores the content of edx to ebx
 	call __write
 	mov ebx, 1 ; Stdout
 	call __syscall
 
 	call __write
-	mov ebx, 1 ; Stdout
-	mov ecx, youlose2  ;copies the content of youlose2 into the ecx
-	mov edx, youlose2_len ;copies the length from youlose2_len into the edx 
+	mov ebx, 1 				; Stdout
+	mov ecx, youlose2  		;copies the content of youlose2 into the ecx
+	mov edx, youlose2_len 	;copies the length from youlose2_len into the edx 
 	call __syscall
 
-	mov ebx, 2 ; Exit code 
+	mov ebx, 2 				; Exit code 
 
 	jmp _exit
 
@@ -229,12 +256,12 @@ _convertok:
 	; You win
 
 	call __write
-	mov ebx, 1 ; Stdout
+	mov ebx, 1 				; Stdout
 	mov ecx, youwin
 	mov edx, youwin_len
 	call __syscall
 
-	mov ebx, 1 ; Exit code for OK, win.
+	mov ebx, 1 				; Exit code for OK, win.
 
 _exit:
 
@@ -243,21 +270,21 @@ _exit:
 	; Print normal goodbye
 
 	call __write
-	mov ebx, 1 ; Stdout
+	mov ebx, 1 				; Stdout
 	mov ecx, goodbye
 	mov edx, goodbye_len
 	call __syscall
-	mov ebx, 2 ; Stderr
+	mov ebx, 2 				; Stderr
 	call __syscall
 
 	; Report OK.
 
 	call __write
-	mov ebx, 1 ; Stdout
+	mov ebx, 1 				; Stdout
 	mov ecx, _ok
 	mov edx, _ok_len
 	call __syscall
-	mov ebx, 2 ; Stderr
+	mov ebx, 2 				; Stderr
 	call __syscall
 
 	; Exit
