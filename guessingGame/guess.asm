@@ -81,8 +81,8 @@ _modend:
 _loop:
         ; Writing the prompt
 
-    mov eax, [tries]          ; copy eax to memory address of tries
-    mov ebx, 1                ; Optimization warning: May change. Do not use if tries > 9. Use standard __itoa instead.
+    mov eax, [tries]          ; copy memory address of tries to eax
+    mov ebx, 1                ; For optimization 
     mov ecx, 10               ; Optimized
     call __itoa_knowndigits   ; call function __itoa_knowndigits
     
