@@ -13,28 +13,28 @@
 ;   nasm -f elf guess.asm                               ;
 ;   ld -m elf_i386 -s -o guess guess.o                  ;
 ;=======================================================;
-; Instruction Material:					;
+; Instruction Material:									;
 ;-------------------------------------------------------;
-; Assembling and running the program			;
-;							;
+; Assembling and running the program					;
+;														;
 ; > Open terminal. In our case, we have used Ubuntu. 	;
-; > Assemble the program.				;					
-; >>> In the terminal, enter nasm –f elf guess.asm	;
-; > Once an object file has been created, 		;
-;	link it with the executable file		;
-; >>> In the terminal, 					;
-;	enter ld -m elf_i386 -s -o guess guess.o	;
-; > Execute the program by typing ./guess		;
+; > Assemble the program.								;					
+; >>> In the terminal, enter nasm –f elf guess.asm		;
+; > Once an object file has been created, 				;
+;			link it with the executable file			;
+; >>> In the terminal, 									;
+;			enter ld -m elf_i386 -s -o guess guess.o	;
+; > Execute the program by typing ./guess				;
 ;-------------------------------------------------------;
-; Playing the game 					;
-;							;
-; > You will be prompted to enter a number.		;
-; >>> N tries left. Input number between 1-100: 	;
-; > Once you have guessed the correct number, 		;
-;		the program will end.			;
-; > However, if not, you will be prompted to guess 	;
-;		again until the 6th try if you still 	;
-;		haven’t guessed correctly.		;
+; Playing the game 										;
+;														;
+; > You will be prompted to enter a number.				;
+; >>> N tries left. Input number between 1-100: 		;
+; > Once you have guessed the correct number, 			;
+;			the program will end.						;
+; > However, if not, you will be prompted to guess 		;
+;			again until the 6th try if you still 		;
+;			haven’t guessed correctly.					;
 ;=======================================================;
 
 
@@ -52,7 +52,7 @@ _start:
 
 	call __open
 	mov ebx, _dev_random
-	mov ecx, 0 ; RDONLY
+	mov ecx, 0 ; READDONLY
 	call __syscall
 
 	mov ebx, eax
@@ -108,7 +108,7 @@ _loop:
     
 	; Writing the prompt
 
-    mov eax, [tries]          ; copy tries to memory address of eax
+    mov eax, [tries]          ; copy tries memory address to eax
     mov ebx, 1                ; Optimization warning: May change. Do not use if tries > 9. Use standard __itoa instead.
     mov ecx, 10               ; Optimized
     call __itoa_knowndigits   ; call function __itoa_knowndigits
